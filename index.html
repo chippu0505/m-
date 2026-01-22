@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>化学基礎正誤チェック</title>
+    <style>
+        :root {
+            --main-green: #e8f5e9;
+            --dark-green: #2e7d32;
+            --main-blue: #e3f2fd;
+            --dark-blue: #1565c0;
+            --accent-yellow: #fff9c4;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+            background-color: #f1f8e9;
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 25px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border: 4px solid var(--dark-green);
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--dark-blue);
+            font-size: 1.4rem;
+            margin: 0 0 10px 0;
+        }
+
+        .desc {
+            font-size: 0.9rem;
+            background: var(--main-blue);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            font-weight: bold;
+        }
+
+        #quiz-area {
+            background: var(--main-green);
+            border-radius: 20px;
+            padding: 30px 20px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        #quiz-area:active {
+            transform: scale(0.98);
+        }
+
+        .animal-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: bold;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .answer-box {
+            background: white;
+            color: #d32f2f;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: 2px solid #d32f2f;
+            display: none;
+        }
+
+        .btn-next {
+            background: var(--dark-blue);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px #0d47a1;
+            width: 100%;
+            font-weight: bold;
+        }
+
+        .btn-next:active {
+            box-shadow: none;
+            transform: translateY(4px);
+        }
+
+        .counter {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>化学基礎正誤チェック</h1>
+    <div class="desc">（　）の語句が正しければ〇、<br>間違っていれば正しい語句を考えよう！</div>
+
+    <div id="quiz-area" onclick="revealAnswer()">
+        <div id="animal" class="animal-icon">🐶</div>
+        <div id="q-text" class="question-text">問題読み込み中...</div>
+        <div id="a-text" class="answer-box"></div>
+    </div>
+
+    <button class="btn-next" onclick="nextQuestion()">次へすすむ ➔</button>
+    <div id="count" class="counter"></div>
+</div>
+
+<script>
+    // CSVから抽出した全問題データ
+    const masterData = [
+        {q: "物質の成分である原子の種類を（元素）という。", a: "〇"},
+        {q: "1種類の元素からなる純物質を（化合物）という。", a: "単体"},
+        {q: "2種類以上の元素からなる純物質を（化合物）という。", a: "〇"},
+        {q: "ダイヤモンドと黒鉛のように、同じ元素からなる単体で性質が異なるものを（同位体）という。", a: "同素体"},
+        {q: "（蒸留）とは、液体を加熱して沸騰させ、生じた蒸気を冷やして再び液体として分離する操作である。", a: "〇"},
+        {q: "原子は、（原子核）とその周りにある電子からできている。", a: "〇"},
+        {q: "原子核は、陽子と（中性子）からできている。", a: "〇"},
+        {q: "陽子の数と電子の数は等しく、これを（原子番号）という。", a: "〇"},
+        {q: "陽子の数と中性子の数の和を（質量数）という。", a: "〇"},
+        {q: "原子番号が同じで、質量数が異なる原子どうしを（同位体）という。", a: "〇"},
+        {q: "電子が入っている層を（電子殻）という。", a: "〇"},
+        {q: "一番外側の電子殻にある電子を（価電子）という。", a: "〇"},
+        {q: "価電子の数が（0）のとき、原子は非常に安定している。", a: "〇"},
+        {q: "周期表の縦の列を（周期）という。", a: "族"},
+        {q: "周期表の横の行を（周期）という。", a: "〇"},
+        {q: "周期表の18族の元素を（希ガス）という。", a: "〇"},
+        {q: "原子が電子を放出したり、受け取ったりして電荷を帯びた粒子を（分子）という。", a: "イオン"},
+        {q: "原子が電子を失って、正の電荷を帯びたものを（陽イオン）という。", a: "〇"},
+        {q: "原子が電子を受け取って、負の電荷を帯びたものを（陰イオン）という。", a: "〇"},
+        {q: "陽イオンと陰イオンが静電気的な力で結合することを（共有結合）という。", a: "イオン結合"},
+        {q: "2個以上の原子が電子を共有してできる結合を（共有結合）という。", a: "〇"},
+        {q: "原子が共有している電子対を（共有電子対）という。", a: "〇"},
+        {q: "共有結合によってできた粒子を（分子）という。", a: "〇"},
+        {q: "自由電子によって生じる金属特有の結合を（金属結合）という。", a: "〇"}
+    ];
+
+    let quizList = [];
+    let currentIndex = 0;
+    const animals = ["🐶", "🐱", "🐰", "🦊", "🐻", "🐼", "🐨", "🦁", "🐧"];
+
+    function shuffle() {
+        quizList = [...masterData].sort(() => Math.random() - 0.5);
+        currentIndex = 0;
+    }
+
+    function showQuiz() {
+        const q = quizList[currentIndex];
+        document.getElementById('q-text').innerText = q.q;
+        document.getElementById('a-text').innerText = "答え： " + q.a;
+        document.getElementById('a-text').style.display = 'none';
+        document.getElementById('animal').innerText = animals[Math.floor(Math.random() * animals.length)];
+        document.getElementById('count').innerText = `問題 ${currentIndex + 1} / ${quizList.length}`;
+    }
+
+    function revealAnswer() {
+        document.getElementById('a-text').style.display = 'block';
+    }
+
+    function nextQuestion() {
+        if (document.getElementById('a-text').style.display === 'none') {
+            revealAnswer();
+            return;
+        }
+        
+        currentIndex++;
+        if (currentIndex < quizList.length) {
+            showQuiz();
+        } else {
+            alert("お疲れ様でした！全問終了です。最初から解き直しましょう！");
+            shuffle();
+            showQuiz();
+        }
+    }
+
+    // 初期化
+    shuffle();
+    showQuiz();
+</script>
+
+</body>
+</html>
